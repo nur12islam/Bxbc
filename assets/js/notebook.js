@@ -1,0 +1,12 @@
+(()=>{const d=document,rm=matchMedia('(prefers-reduced-motion:reduce)').matches;
+const m=d.querySelector('.menu'),n=d.querySelector('.top nav');
+m.onclick=()=>m.setAttribute('aria-expanded',n.classList.toggle('open'));n.onclick=()=>n.classList.remove('open');
+const p=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Kolkata',weekday:'short',hour:'numeric',hour12:false}).formatToParts(new Date()).map(x=>[x.type,x.value]));
+const h=+p.hour%24,fri=p.weekday==='Fri',o=!fri&&h>=8&&h<20,s=d.getElementById('status');
+s.className='stamp '+(o?'open':'closed');
+s.innerHTML=o?'OPEN NOW<small>until 8 PM</small>':'CLOSED<small>'+(fri?'Friday, opens tomorrow 8 AM':p.weekday==='Thu'&&h>=20?'opens Saturday 8 AM':'opens 8 AM')+'</small>';
+if(rm)return;
+d.documentElement.classList.add('js');
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){const t=e.target;t.classList.add('in');io.unobserve(t);setTimeout(()=>t.removeAttribute('data-r'),1800)}}),{threshold:.15});
+d.querySelectorAll('h2,.note,.shots .pin,.labels img,blockquote,.memo,.card,.mapbox').forEach((el,i)=>{el.dataset.r='';el.style.setProperty('--i',i%3);io.observe(el)});
+})();
