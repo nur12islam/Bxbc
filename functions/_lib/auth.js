@@ -1,8 +1,0 @@
-const COOKIE="bxbc_comment_admin";
-const encoder=new TextEncoder();
-async function sign(value,secret){const key=await crypto.subtle.importKey("raw",encoder.encode(secret),{name:"HMAC",hash:"SHA-256"},false,["sign"]);const bytes=new Uint8Array(await crypto.subtle.sign("HMAC",key,encoder.encode(value)));return btoa(String.fromCharCode(...bytes)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
-export async function makeSession(secret){const payload=btoa(JSON.stringify({exp:Date.now()+8*60*60*1000})).replace(/=+$/,"");return payload+"."+await sign(payload,secret)}
-export async function validSession(request,secret){if(!secret)return false;const cookie=request.headers.get("Cookie")||"";const raw=cookie.split(";").map(x=>x.trim()).find(x=>x.startsWith(COOKIE+"="))?.slice(COOKIE.length+1);if(!raw)return false;const [payload,sig]=raw.split(".");if(!payload||!sig)return false;const expected=await sign(payload,secret);if(sig.length!==expected.length)return false;let diff=0;for(let i=0;i<sig.length;i++)diff|=sig.charCodeAt(i)^expected.charCodeAt(i);if(diff!==0)return false;try{return JSON.parse(atob(payload)).exp>Date.now()}catch{return false}}
-export const sessionCookie=(value)=>COOKIE+"="+value+"; Path=/api/admin; HttpOnly; Secure; SameSite=Strict; Max-Age=28800";
-export const clearCookie=()=>COOKIE+"=; Path=/api/admin; HttpOnly; Secure; SameSite=Strict; Max-Age=0";
-export const json=(data,status=200,extra={})=>new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff",...extra}});
