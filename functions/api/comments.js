@@ -1,4 +1,42 @@
+import { neon } from "@neondatabase/serverless";
+
 const ROLES = new Set(["Student","Teacher / Professor","Office Employee","Office Worker","Doctor / Medical Professional","Bank Staff","Artist / Designer","Business Owner","Government Employee","Engineer / IT Professional","Freelancer","Hostel Resident","Parent / Guardian","Shopkeeper","Healthcare Worker","Researcher","Other","General Customer"]);
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"}});
-export async function onRequestGet({env}){if(!env.DB)return json({error:"Comments service is not configured yet."},503);try{const {results=[]}=await env.DB.prepare("SELECT id, name, role, comment, created_at FROM comments WHERE status = 'approved' ORDER BY created_at DESC LIMIT 100").all();return json({comments:results})}catch{return json({error:"Could not load comments."},500)}}
-export async function onRequestPost({request,env}){if(!env.DB)return json({error:"Comments service is not configured yet."},503);if(!request.headers.get("content-type")?.includes("application/json"))return json({error:"Send the form as JSON."},415);let data;try{data=await request.json()}catch{return json({error:"Invalid request."},400)}if(typeof data.website==="string"&&data.website.trim())return json({ok:true},202);const name=String(data.name||"").trim().replace(/\s+/g," ");const role=String(data.role||"").trim();const comment=String(data.comment||"").trim();if(name.length<2||name.length>70)return json({error:"Name must be between 2 and 70 characters."},400);if(!ROLES.has(role))return json({error:"Please choose a valid role."},400);if(comment.length<8||comment.length>1000)return json({error:"Comment must be between 8 and 1,000 characters."},400);const origin=request.headers.get("Origin");if(origin){try{if(new URL(origin).host!==new URL(request.url).host)return json({error:"Request origin not allowed."},403)}catch{return json({error:"Invalid origin."},403)}}try{await env.DB.prepare("INSERT INTO comments (name, role, comment, status, created_at) VALUES (?, ?, ?, 'pending', datetime('now'))").bind(name,role,comment).run();return json({ok:true,message:"Comment submitted for moderation."},201)}catch{return json({error:"Could not save your comment. Please try again later."},500)}}
+const database=(env)=>env.DATABASE_URL ? neon(env.DATABASE_URL) : null;
+
+export async function onRequestGet({env}) {
+  const sql=database(env);
+  if(!sql) return json({error:"Comments service is not configured yet."},503);
+  try {
+    const comments=await sql`SELECT id, name, role, comment, created_at FROM comments WHERE status = 'approved' ORDER BY created_at DESC LIMIT 100`;
+    return json({comments});
+  } catch {
+    return json({error:"Could not load comments."},500);
+  }
+}
+
+export async function onRequestPost({request,env}) {
+  const sql=database(env);
+  if(!sql) return json({error:"Comments service is not configured yet."},503);
+  if(!request.headers.get("content-type")?.includes("application/json")) return json({error:"Send the form as JSON."},415);
+  let data;
+  try { data=await request.json(); } catch { return json({error:"Invalid request."},400); }
+  if(typeof data.website==="string" && data.website.trim()) return json({ok:true},202);
+  const name=String(data.name||"").trim().replace(/\s+/g," ");
+  const role=String(data.role||"").trim();
+  const comment=String(data.comment||"").trim();
+  if(name.length<2||name.length>70) return json({error:"Name must be between 2 and 70 characters."},400);
+  if(!ROLES.has(role)) return json({error:"Please choose a valid role."},400);
+  if(comment.length<8||comment.length>1000) return json({error:"Comment must be between 8 and 1,000 characters."},400);
+  const origin=request.headers.get("Origin");
+  if(origin) {
+    try { if(new URL(origin).host!==new URL(request.url).host) return json({error:"Request origin not allowed."},403); }
+    catch { return json({error:"Invalid origin."},403); }
+  }
+  try {
+    await sql`INSERT INTO comments (name, role, comment, status, created_at) VALUES (${name}, ${role}, ${comment}, 'pending', NOW())`;
+    return json({ok:true,message:"Comment submitted for moderation."},201);
+  } catch {
+    return json({error:"Could not save your comment. Please try again later."},500);
+  }
+}
