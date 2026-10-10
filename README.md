@@ -26,6 +26,6 @@ A responsive notebook-inspired website for BXBC, built with HTML, CSS and JavaSc
 - Email: bxbc9932@gmail.com
 
 ## Live site
-https://shopbxbc.github.io/
+https://Bxbc.darki.online/
 
 © 2026 BXBC – Bharatpur Xerox & Book Centre. All Rights Reserved.
