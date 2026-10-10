@@ -1,0 +1,3 @@
+import {makeSession,sessionCookie,json,clearCookie} from "../../_lib/auth.js";
+export async function onRequestPost({request,env}){if(!env.COMMENTS_ADMIN_PASSWORD||!env.COMMENTS_SESSION_SECRET)return json({error:"Admin login is not configured. Set the required Cloudflare secrets."},503);let data;try{data=await request.json()}catch{return json({error:"Invalid request."},400)}const supplied=String(data.password||"");if(supplied.length>200||supplied!==env.COMMENTS_ADMIN_PASSWORD)return json({error:"Incorrect password."},401);const token=await makeSession(env.COMMENTS_SESSION_SECRET);return json({ok:true},{status:200,headers:{"Set-Cookie":sessionCookie(token)}})}
+export async function onRequestDelete(){return json({ok:true},{headers:{"Set-Cookie":clearCookie()}})}
