@@ -2,11 +2,12 @@
 
 A responsive notebook-inspired website for BXBC, built with HTML, CSS and JavaScript.
 
-## Services
-- Xerox and photocopy
-- Document printing
-- Lamination
-- Notebooks and stationery
+## Main products and services
+- Exercise books and notebooks
+- Pens and writing supplies
+- School stationery and office supplies
+- Text-based PDF printouts only (no image files or image-to-PDF printouts)
+- Limited Xerox and photocopy
 - WhatsApp and click-to-call links
 - Google Maps directions and embedded map
 - Responsive mobile navigation and reduced-motion support
